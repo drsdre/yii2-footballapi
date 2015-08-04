@@ -1,0 +1,30 @@
+{
+  "name": "drsdre/yii2-footballapi",
+  "description": "Yii2 Extension for football-api.com API access",
+  "keywords": ["yii2", "extension", "soap", "consumer", "API", "football-api.com", "live football scores"],
+  "homepage": "https://github.com/drsdre/yii2-footballapi",
+  "type": "yii2-extension",
+  "license": "BSD-3-Clause",
+  "support": {
+    "issues": "https://github.com/drsdre/yii2-footballapi/issues?state=open",
+    "source": "https://github.com/drsdre/yii2-footballapi",
+    "docs": "http://football-api.com/documentation/"
+  },
+  "authors": [
+    {
+      "name": "Andre Schuurman",
+      "email": "andre.schuurman+yii2-footballapi@gmail.com"
+    },
+  ],
+  "require": {
+    "php": ">=5.4.0",
+    "lib-curl": "*",
+    "ext-simplexml": "*",
+    "yiisoft/yii2": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "FootballAPI\\": ""
+    }
+  }
+}
