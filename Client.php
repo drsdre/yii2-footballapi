@@ -27,7 +27,7 @@ class Client extends Component {
 	/**
 	 * @var string output type default value: JSON. Options include: XML, JSON, PHP, LINE, CONSOLE, VAR.
 	 */
-	public $output_type = 'PHP';
+	public $output_type = 'JSON';
 
 	/**
 	 * @var string optional the IP address of interface for originating requests
