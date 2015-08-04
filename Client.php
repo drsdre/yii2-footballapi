@@ -25,7 +25,7 @@ class Client extends Component {
 	public $api_key;
 
 	/**
-	 * @var string output type default value: JSON. Options include: XML, JSON, PHP, LINE, CONSOLE, VAR.
+	 * @var string output type default value: JSON. Options include: XML, JSON, ARRAY, OBJECT, LINE, CONSOLE, VAR.
 	 */
 	public $output_type = 'JSON';
 
@@ -42,12 +42,14 @@ class Client extends Component {
 	/**
 	 * @var integer optional time in seconds to cache results
 	 */
-	public $cache_time;
+	public $cache_time = 0;
 
 	/**
 	 * @var boolean optional generate a content hash to facilitate easier change detection
 	 */
 	public $generate_hash = false;
+
+	const TIMEOUT_CURL = 30;
 
 	/**
 	 * Initialize component
@@ -104,22 +106,60 @@ class Client extends Component {
 		$data = $this->request( $url );
 
 		// Convert and check if data is valid XML
-		if ( $this->output_type == 'XML') {
-			if ( false === ( $data = simplexml_load_string( $data ) ) ) {
-				throw new Exception( "Invalid XML" );
-			}
+		switch ($this->output_type) {
+			case 'XML':
+				if ( false === ( $data = simplexml_load_string( $data ) ) ) {
+					throw new Exception( "Invalid XML" );
+				}
 
-			// Check if time-out is given for call
-			// TODO: check error message
-			if ( strstr( $data[0], "To avoid misuse of the service" ) ) {
-				throw new Exception( $data[0] );
-			}
+				// Check if time-out is given for call
+				// TODO: check error message
+				/*if ( strstr( $data[0], "To avoid misuse of the service" ) ) {
+					throw new Exception( $data[0] );
+				}*/
 
-			// If requested generate a content hash and source url
-			if ($this->generate_hash) {
-				$data->addChild( 'contentHash', md5($data->asXML()) );
-				$data->addChild( 'sourceUrl', htmlspecialchars( $url ) );
-			}
+				// If requested generate a content hash and source url
+				if ($this->generate_hash) {
+					$data->addChild( 'contentHash', md5($data->asXML()) );
+					$data->addChild( 'sourceUrl', htmlspecialchars( $url ) );
+				}
+				break;
+			case 'PHPARRAY':
+				$data_raw = $data;
+				if ( is_null ( $data = json_decode( $data, true ) ) ) {
+					throw new Exception( "Invalid JSON" );
+				}
+
+				// Check if time-out is given for call
+				// TODO: check error message
+				/*if ( strstr( $data[0], "To avoid misuse of the service" ) ) {
+					throw new Exception( $data[0] );
+				}*/
+
+				// If requested generate a content hash and source url
+				if ($this->generate_hash) {
+					$data['contentHash'] = md5($data_raw);
+					$data['sourceUrl'] = htmlspecialchars( $url );
+				}
+				break;
+			case 'PHPOBJECT':
+				$data_raw = $data;
+				if ( is_null ( $data = json_decode( $data, false ) ) ) {
+					throw new Exception( "Invalid JSON" );
+				}
+
+				// Check if time-out is given for call
+				// TODO: check error message
+				/*if ( strstr( $data[0], "To avoid misuse of the service" ) ) {
+					throw new Exception( $data[0] );
+				}*/
+
+				// If requested generate a content hash and source url
+				if ($this->generate_hash) {
+					$data->contentHash = md5($data_raw);
+					$data->sourceUrl = htmlspecialchars( $url );
+				}
+				break;
 		}
 
 		// If caching is available put results in cache
@@ -144,7 +184,10 @@ class Client extends Component {
 	 * @throws Exception
 	 */
 	protected function buildUrl( $method, $params ) {
-		$url = $this->service_url . "?Action=" . $method . "&APIKey=" . $this->api_key. "&OutputType=" . $this->output_type;
+		$url = $this->service_url .
+		       "?Action=" . $method .
+		       "&APIKey=" . $this->api_key.
+		       "&OutputType=" . in_array($this->output_type, ['PHPARRAY', 'PHPOBJECT'])?'JSON':$this->output_type;
 		for ( $i = 0; $i < count( $params ); $i ++ ) {
 			if ( is_array( $params[ $i ] ) ) {
 				foreach ( $params[ $i ] as $key => $value ) {
