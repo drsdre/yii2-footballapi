@@ -168,7 +168,9 @@ class Client extends Component {
 				// Add cache information
 				$data->addChild( 'cached', date( 'Y-m-d h:m:s' ) );
 			}
-			$this->cacheSet( $url, $data, $this->cache_time );
+			if (!$this->cacheSet( $url, $data, $this->cache_time )) {
+				throw new Exception('Failed to cache results for '.$name);
+			}
 		}
 
 		return $data;
@@ -244,7 +246,7 @@ class Client extends Component {
 	protected function cacheSet($key, $result, $timeout)
 	{
 
-		$this->cache->set($key, $result, $timeout);
+		return $this->cache->set($key, $result, $timeout);
 	}
 
 	/**
