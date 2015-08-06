@@ -25,7 +25,7 @@ class Client extends Component {
 	public $api_key;
 
 	/**
-	 * @var string output type default value: JSON. Options include: XML, JSON, ARRAY, OBJECT, LINE, CONSOLE, VAR.
+	 * @var string output type default value: JSON. Options include: XML, JSON, PHPARRAY, PHPOBJECT, LINE, CONSOLE, VAR.
 	 */
 	public $output_type = 'JSON';
 
@@ -48,6 +48,11 @@ class Client extends Component {
 	 * @var boolean optional generate a content hash to facilitate easier change detection
 	 */
 	public $generate_hash = false;
+
+	/**
+	 * @var integer amount of API calls remaining (default 1000 per hour)
+	 */
+	private $api_calls_remaining = 1000;
 
 	const TIMEOUT_CURL = 30;
 
@@ -112,11 +117,15 @@ class Client extends Component {
 					throw new Exception( "Invalid XML" );
 				}
 
-				// Check if time-out is given for call
-				// TODO: check error message
-				/*if ( strstr( $data[0], "To avoid misuse of the service" ) ) {
-					throw new Exception( $data[0] );
-				}*/
+				// Check if error message is given for call
+				if ( isset($data->ERROR) ) {
+					throw new Exception( $data->ERROR );
+				}
+
+				// Track amount of remaining API calls
+				if ( isset($data->APIRequestsRemaining) ) {
+					$this->api_calls_remaining = $data->APIRequestsRemaining;
+				}
 
 				// If requested generate a content hash and source url
 				if ($this->generate_hash) {
@@ -130,14 +139,22 @@ class Client extends Component {
 					throw new Exception( "Invalid JSON" );
 				}
 
-				// Check if time-out is given for call
-				// TODO: check error message
-				/*if ( strstr( $data[0], "To avoid misuse of the service" ) ) {
-					throw new Exception( $data[0] );
-				}*/
+				// Check if error message is given for call
+				if ( isset($data['ERROR']) ) {
+					throw new Exception( $data['ERROR'] );
+				}
+
+				// Track amount of remaining API calls
+				if ( isset($data['APIRequestsRemaining']) ) {
+					$this->api_calls_remaining = $data['APIRequestsRemaining'];
+				}
 
 				// If requested generate a content hash and source url
 				if ($this->generate_hash) {
+					// Remove non data variable items before hashing
+					if (isset($data_raw['ComputationTime'])) {
+						unset($data_raw['ComputationTime']);
+					}
 					$data['contentHash'] = md5($data_raw);
 					$data['sourceUrl'] = htmlspecialchars( $url );
 				}
@@ -148,14 +165,22 @@ class Client extends Component {
 					throw new Exception( "Invalid JSON" );
 				}
 
-				// Check if time-out is given for call
-				// TODO: check error message
-				/*if ( strstr( $data[0], "To avoid misuse of the service" ) ) {
-					throw new Exception( $data[0] );
-				}*/
+				// Check if error message is given for call
+				if ( isset($data->ERROR) ) {
+					throw new Exception( $data->ERROR );
+				}
+
+				// Track amount of remaining API calls
+				if ( isset($data->APIRequestsRemaining) ) {
+					$this->api_calls_remaining = $data->APIRequestsRemaining;
+				}
 
 				// If requested generate a content hash and source url
 				if ($this->generate_hash) {
+					// Remove non data variable items before hashing
+					if (isset($data_raw->ComputationTime)) {
+						unset($data_raw->ComputationTime);
+					}
 					$data->contentHash = md5($data_raw);
 					$data->sourceUrl = htmlspecialchars( $url );
 				}
@@ -189,7 +214,7 @@ class Client extends Component {
 		$url = $this->service_url .
 		       "?Action=" . $method .
 		       "&APIKey=" . $this->api_key.
-		       "&OutputType=" . in_array($this->output_type, ['PHPARRAY', 'PHPOBJECT'])?'JSON':$this->output_type;
+		       "&OutputType=" . (in_array($this->output_type, ['PHPARRAY', 'PHPOBJECT'])?'JSON':$this->output_type);
 		for ( $i = 0; $i < count( $params ); $i ++ ) {
 			if ( is_array( $params[ $i ] ) ) {
 				foreach ( $params[ $i ] as $key => $value ) {
@@ -261,5 +286,9 @@ class Client extends Component {
 		if ($result = $this->cache->get($key)) {
 			return $result;
 		}
+	}
+
+	public function getRemainingAPICalls() {
+		return $this->api_calls_remaining;
 	}
 }
