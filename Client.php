@@ -59,14 +59,14 @@ class Client extends Component {
 	/**
 	 * Initialize component
 	 *
-	 * @throws Exception
+	 * @throws InvalidConfigException
 	 */
 	public function init() {
 		if ( empty( $this->service_url ) ) {
-			throw new Exception( "service_url cannot be empty. Please configure." );
+			throw new InvalidConfigException( "service_url cannot be empty. Please configure." );
 		}
 		if ( empty( $this->api_key ) ) {
-			throw new Exception( "api_key cannot be empty. Please configure." );
+			throw new InvalidConfigException( "api_key cannot be empty. Please configure." );
 		}
 		if ($this->cache) {
 			// If class was specified as name, try to instantiate on application
@@ -81,11 +81,11 @@ class Client extends Component {
 	 *
 	 * @param $ip
 	 *
-	 * @throws Exception
+	 * @throws InvalidConfigException
 	 */
 	public function setRequestIp( $ip ) {
 		if ( empty( $ip ) ) {
-			throw new Exception( "IP parameter cannot be empty.", E_USER_WARNING );
+			throw new InvalidConfigException( "IP parameter cannot be empty." );
 		}
 		$this->request_ip = $ip;
 	}
@@ -114,12 +114,12 @@ class Client extends Component {
 		switch ($this->output_type) {
 			case 'XML':
 				if ( false === ( $data = simplexml_load_string( $data ) ) ) {
-					throw new Exception( "Invalid XML" );
+					throw new Exception( "Invalid XML", Exception::E_API_INVALID_RESPONSE );
 				}
 
 				// Check if error message is given for call
-				if ( isset($data->ERROR) ) {
-					throw new Exception( $data->ERROR );
+				if ( $data->ERROR <> 'OK' ) {
+					throw new Exception( $data->ERROR, Exception::E_API_GENERAL );
 				}
 
 				// Track amount of remaining API calls
@@ -136,12 +136,12 @@ class Client extends Component {
 			case 'PHPARRAY':
 				$data_raw = $data;
 				if ( is_null ( $data = json_decode( $data, true ) ) ) {
-					throw new Exception( "Invalid JSON" );
+					throw new Exception( "Invalid JSON", Exception::E_API_INVALID_RESPONSE );
 				}
 
 				// Check if error message is given for call
-				if ( isset($data['ERROR']) ) {
-					throw new Exception( $data['ERROR'] );
+				if ( $data['ERROR'] <> 'OK' ) {
+					throw new Exception( $data['ERROR'], Exception::E_API_GENERAL );
 				}
 
 				// Track amount of remaining API calls
@@ -162,12 +162,12 @@ class Client extends Component {
 			case 'PHPOBJECT':
 				$data_raw = $data;
 				if ( is_null ( $data = json_decode( $data, false ) ) ) {
-					throw new Exception( "Invalid JSON" );
+					throw new Exception( "Invalid JSON", Exception::E_API_INVALID_RESPONSE );
 				}
 
 				// Check if error message is given for call
-				if ( isset($data->ERROR) ) {
-					throw new Exception( $data->ERROR );
+				if ( $data->ERROR <> 'OK' ) {
+					throw new Exception( $data->ERROR, Exception::E_API_GENERAL );
 				}
 
 				// Track amount of remaining API calls
@@ -221,7 +221,7 @@ class Client extends Component {
 					$url .= "&" . strtolower( $key ) . "=" . rawurlencode( $value );
 				}
 			} else {
-				throw new Exception( "Arguments must be an array" );
+				throw new Exception( "Arguments must be an array", Exception::E_API_INVALID_PARAMETER );
 			}
 		}
 
@@ -252,11 +252,11 @@ class Client extends Component {
 		curl_close( $curl );
 
 		if ( $cerrno != 0 ) {
-			throw new Exception( "Curl error: $cerror ($cerrno)\nURL: $url", E_USER_WARNING );
+			throw new Exception( "Curl error: $cerror ($cerrno)\nURL: $url", Exception::E_API_GENERAL );
 		}
 
 		if ( $http_code <> 200 ) {
-			throw new Exception( "Wrong HTTP status code: $http_code - $data\nURL: $url" );
+			throw new Exception( "Wrong HTTP status code: $http_code - $data\nURL: $url", Exception::E_API_INVALID_RESPONSE );
 		}
 		return $data;
 	}
