@@ -114,12 +114,12 @@ class Client extends Component {
 		switch ($this->output_type) {
 			case 'XML':
 				if ( false === ( $data = simplexml_load_string( $data ) ) ) {
-					throw new Exception( "Invalid XML", Exception::E_API_INVALID_RESPONSE );
+					throw new Exception( "$url: Invalid XML", Exception::E_API_INVALID_RESPONSE );
 				}
 
 				// Check if error message is given for call
 				if ( $data->ERROR <> 'OK' ) {
-					throw new Exception( $data->ERROR, Exception::E_API_GENERAL );
+					throw new Exception( "$url: {$data->ERROR}", Exception::E_API_GENERAL );
 				}
 
 				// Track amount of remaining API calls
@@ -136,12 +136,12 @@ class Client extends Component {
 			case 'PHPARRAY':
 				$data_raw = $data;
 				if ( is_null ( $data = json_decode( $data, true ) ) ) {
-					throw new Exception( "Invalid JSON", Exception::E_API_INVALID_RESPONSE );
+					throw new Exception( "$url: Invalid JSON", Exception::E_API_INVALID_RESPONSE );
 				}
 
 				// Check if error message is given for call
 				if ( $data['ERROR'] <> 'OK' ) {
-					throw new Exception( $data['ERROR'], Exception::E_API_GENERAL );
+					throw new Exception( "$url: {$data['ERROR']}", Exception::E_API_GENERAL );
 				}
 
 				// Track amount of remaining API calls
@@ -162,12 +162,12 @@ class Client extends Component {
 			case 'PHPOBJECT':
 				$data_raw = $data;
 				if ( is_null ( $data = json_decode( $data, false ) ) ) {
-					throw new Exception( "Invalid JSON", Exception::E_API_INVALID_RESPONSE );
+					throw new Exception( "$url: Invalid JSON", Exception::E_API_INVALID_RESPONSE );
 				}
 
 				// Check if error message is given for call
 				if ( $data->ERROR <> 'OK' ) {
-					throw new Exception( $data->ERROR, Exception::E_API_GENERAL );
+					throw new Exception( "$url: {$data->ERROR}", Exception::E_API_GENERAL );
 				}
 
 				// Track amount of remaining API calls
@@ -194,7 +194,7 @@ class Client extends Component {
 				$data->addChild( 'cached', date( 'Y-m-d h:m:s' ) );
 			}
 			if (!$this->cacheSet( $url, $data, $this->cache_time )) {
-				throw new Exception('Failed to cache results for '.$name);
+				throw new Exception("'$url: Failed to cache results");
 			}
 		}
 
@@ -221,7 +221,7 @@ class Client extends Component {
 					$url .= "&" . strtolower( $key ) . "=" . rawurlencode( $value );
 				}
 			} else {
-				throw new Exception( "Arguments must be an array", Exception::E_API_INVALID_PARAMETER );
+				throw new Exception( "Arguments $params must be an array", Exception::E_API_INVALID_PARAMETER );
 			}
 		}
 
