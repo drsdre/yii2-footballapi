@@ -18,7 +18,7 @@
   ],
   "require": {
     "php": ">=5.4.0",
-    "lib-curl": "*",
+    "ext-curl": "*",
     "ext-simplexml": "*",
     "yiisoft/yii2": "*"
   },
